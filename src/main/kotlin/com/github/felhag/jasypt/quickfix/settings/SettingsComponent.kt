@@ -3,10 +3,7 @@ package com.github.felhag.jasypt.quickfix.settings
 import com.github.felhag.jasypt.quickfix.Environment
 import com.intellij.ui.components.JBPasswordField
 import com.intellij.util.ui.FormBuilder
-import java.util.stream.Collector
-import java.util.stream.Collectors
 import javax.swing.JPanel
-
 
 class SettingsComponent {
     var panel: JPanel? = null
@@ -15,7 +12,7 @@ class SettingsComponent {
 
     init {
         val builder = FormBuilder.createFormBuilder()
-        passwords.forEach { builder.addLabeledComponent(it.key.name, it.value) }
+        passwords.forEach { builder.addLabeledComponent("Jasypt password ${it.key.name}", it.value) }
         panel = builder.addComponentFillVertically(JPanel(), 0).panel
     }
 
