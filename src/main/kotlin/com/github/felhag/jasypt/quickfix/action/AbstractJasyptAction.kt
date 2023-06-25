@@ -3,8 +3,10 @@ package com.github.felhag.jasypt.quickfix.action
 import com.github.felhag.jasypt.quickfix.Environment
 import com.github.felhag.jasypt.quickfix.settings.Settings
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.refactoring.suggested.endOffset
@@ -13,8 +15,9 @@ import com.ulisesbocchio.jasyptspringboot.configuration.StringEncryptorBuilder
 import com.ulisesbocchio.jasyptspringboot.properties.JasyptEncryptorConfigurationProperties
 import org.jasypt.encryption.StringEncryptor
 
-const val PREFIX = "ENC(";
-const val SUFFIX = ")";
+const val PREFIX = "ENC("
+const val SUFFIX = ")"
+
 abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAction() {
 
     override fun getFamilyName(): String {
@@ -27,7 +30,7 @@ abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAct
 
     override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean {
         if (getEnvironment(file) == null) {
-            return false;
+            return false
         }
         val element = findElement(file, editor)
         return element != null && isValidProperty(element)
@@ -39,21 +42,27 @@ abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAct
         // Force to use intellijs classloader
         Thread.currentThread().contextClassLoader = this.javaClass.classLoader
 
+        val properties = buildProperties(file)
+        val builder = StringEncryptorBuilder(properties, "jasypt.encryptor").build()
+        val decrypt = try {
+            execute(builder, element.text)
+        } catch (e: Exception) {
+            invokeLater { Messages.showErrorDialog("Failed to ${name.lowercase()} 😢", "Error!") }
+            return
+        }
+
+        val document = editor!!.document
+        document.deleteString(element.startOffset, element.endOffset)
+        document.insertString(element.startOffset, decrypt)
+    }
+
+    private fun buildProperties(file: PsiFile?): JasyptEncryptorConfigurationProperties {
         val properties = JasyptEncryptorConfigurationProperties()
         val env = getEnvironment(file)!!
         properties.password = Settings.get().get(env)
         properties.algorithm = "PBEWithMD5AndDES"
         properties.ivGeneratorClassname = "org.jasypt.iv.NoIvGenerator"
-
-        val builder = StringEncryptorBuilder(
-            properties,
-            "jasypt.encryptor"
-        ).build()
-
-        val decrypt = execute(builder, element.text)
-        val document = editor!!.document
-        document.deleteString(element.startOffset, element.endOffset)
-        document.insertString(element.startOffset, decrypt)
+        return properties
     }
 
     private fun getEnvironment(file: PsiFile?): Environment? {
