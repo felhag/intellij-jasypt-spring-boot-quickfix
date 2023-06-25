@@ -1,4 +1,4 @@
-package com.github.felhag.jasypt.quickfix
+package com.github.felhag.jasypt.quickfix.action
 
 import com.github.felhag.jasypt.quickfix.settings.Settings
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
@@ -10,30 +10,18 @@ import com.intellij.refactoring.suggested.endOffset
 import com.intellij.refactoring.suggested.startOffset
 import com.ulisesbocchio.jasyptspringboot.configuration.StringEncryptorBuilder
 import com.ulisesbocchio.jasyptspringboot.properties.JasyptEncryptorConfigurationProperties
-import org.jetbrains.annotations.NotNull
+import org.jasypt.encryption.StringEncryptor
 
-class DecryptAction : BaseIntentionAction() {
+const val PREFIX = "ENC(";
+const val SUFFIX = ")";
+abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAction() {
+
     override fun getFamilyName(): String {
-        return "Decrypt";
+        return name
     }
 
-    @NotNull
     override fun getText(): String {
-        return "Decrypt"
-    }
-
-    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean {
-        if (editor == null || file == null) {
-            return false
-        }
-
-        val element = this.findElement(file, editor)
-        return element != null && element.text.startsWith("ENC(");
-    }
-
-    private fun findElement(file: PsiFile, editor: Editor): PsiElement? {
-        val offset: Int = editor.caretModel.offset
-        return file.findElementAt(offset)
+        return name
     }
 
     override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
@@ -54,13 +42,21 @@ class DecryptAction : BaseIntentionAction() {
         properties.algorithm = "PBEWithMD5AndDES"
         properties.ivGeneratorClassname = "org.jasypt.iv.NoIvGenerator"
 
-        val encrypt = StringEncryptorBuilder(
+        val builder = StringEncryptorBuilder(
             properties,
             "jasypt.encryptor"
         ).build()
 
-        val decrypt = encrypt.decrypt(element.text.substring("ENC(".length, element.text.length - 1))
+        val decrypt = execute(builder, element.text)
         editor.document.deleteString(element.startOffset, element.endOffset)
         editor.document.insertString(element.startOffset, decrypt)
     }
+
+    abstract fun execute(encryptor: StringEncryptor, text: String): String;
+
+    protected fun findElement(file: PsiFile, editor: Editor): PsiElement? {
+        val offset: Int = editor.caretModel.offset
+        return file.findElementAt(offset)
+    }
+
 }

@@ -17,7 +17,11 @@
                                  displayName="Jasypt Spring Boot Quickfix"/>
         <intentionAction>
             <language>YAML</language>
-            <className>com.github.felhag.jasypt.quickfix.DecryptAction</className>
+            <className>com.github.felhag.jasypt.quickfix.action.DecryptAction</className>
+        </intentionAction>
+        <intentionAction>
+            <language>YAML</language>
+            <className>com.github.felhag.jasypt.quickfix.action.EncryptAction</className>
         </intentionAction>
     </extensions>
 </idea-plugin>
