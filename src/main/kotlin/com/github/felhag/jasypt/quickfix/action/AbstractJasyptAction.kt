@@ -25,20 +25,22 @@ abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAct
         return name
     }
 
-    override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
-        if (editor == null || file == null) {
-            return
+    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean {
+        if (getEnvironment(file) == null) {
+            return false;
         }
+        val element = findElement(file, editor)
+        return element != null && isValidProperty(element)
+    }
 
+    override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
         val element = this.findElement(file, editor) ?: return
 
         // Force to use intellijs classloader
         Thread.currentThread().contextClassLoader = this.javaClass.classLoader
 
         val properties = JasyptEncryptorConfigurationProperties()
-        val fileName = file.virtualFile.name
-        val envLetter = fileName.substring("application-".length, "application-".length + 1)
-        val env = Environment.valueOf(envLetter.uppercase())
+        val env = getEnvironment(file)!!
         properties.password = Settings.get().get(env)
         properties.algorithm = "PBEWithMD5AndDES"
         properties.ivGeneratorClassname = "org.jasypt.iv.NoIvGenerator"
@@ -49,15 +51,26 @@ abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAct
         ).build()
 
         val decrypt = execute(builder, element.text)
-        editor.document.deleteString(element.startOffset, element.endOffset)
-        editor.document.insertString(element.startOffset, decrypt)
+        val document = editor!!.document
+        document.deleteString(element.startOffset, element.endOffset)
+        document.insertString(element.startOffset, decrypt)
     }
 
-    abstract fun execute(encryptor: StringEncryptor, text: String): String;
+    private fun getEnvironment(file: PsiFile?): Environment? {
+        val fileName = file!!.virtualFile.name
+        val envLetter = fileName.substring("application-".length, "application-".length + 1)
+        return Environment.values().find { it.name == envLetter.uppercase() }
+    }
 
-    protected fun findElement(file: PsiFile, editor: Editor): PsiElement? {
+    abstract fun execute(encryptor: StringEncryptor, text: String): String
+
+    abstract fun isValidProperty(element: PsiElement): Boolean
+
+    private fun findElement(file: PsiFile?, editor: Editor?): PsiElement? {
+        if (file == null || editor == null) {
+            return null
+        }
         val offset: Int = editor.caretModel.offset
         return file.findElementAt(offset)
     }
-
 }
