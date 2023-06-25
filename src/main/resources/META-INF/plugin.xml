@@ -11,6 +11,10 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.github.felhag.jasypt.quickfix.settings.Settings"/>
+        <applicationConfigurable instance="com.github.felhag.jasypt.quickfix.settings.SettingsConfigurer"
+                                 id="jasypt.quickfix.settings.SettingsConfigurer"
+                                 displayName="Jasypt Spring Boot Quickfix"/>
         <intentionAction>
             <language>YAML</language>
             <className>com.github.felhag.jasypt.quickfix.DecryptAction</className>

@@ -1,5 +1,6 @@
 package com.github.felhag.jasypt.quickfix
 
+import com.github.felhag.jasypt.quickfix.settings.Settings
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
@@ -10,9 +11,6 @@ import com.intellij.refactoring.suggested.startOffset
 import com.ulisesbocchio.jasyptspringboot.configuration.StringEncryptorBuilder
 import com.ulisesbocchio.jasyptspringboot.properties.JasyptEncryptorConfigurationProperties
 import org.jetbrains.annotations.NotNull
-import org.springframework.boot.env.YamlPropertySourceLoader
-import org.springframework.core.env.StandardEnvironment
-import org.springframework.core.io.UrlResource
 
 class DecryptAction : BaseIntentionAction() {
     override fun getFamilyName(): String {
@@ -33,7 +31,7 @@ class DecryptAction : BaseIntentionAction() {
         return element != null && element.text.startsWith("ENC(");
     }
 
-    fun findElement(file: PsiFile, editor: Editor): PsiElement? {
+    private fun findElement(file: PsiFile, editor: Editor): PsiElement? {
         val offset: Int = editor.caretModel.offset
         return file.findElementAt(offset)
     }
@@ -52,7 +50,7 @@ class DecryptAction : BaseIntentionAction() {
         Thread.currentThread().contextClassLoader = this.javaClass.classLoader
 
         val properties = JasyptEncryptorConfigurationProperties()
-        properties.password = ""
+        properties.password = Settings.get().get()
         properties.algorithm = "PBEWithMD5AndDES"
         properties.ivGeneratorClassname = "org.jasypt.iv.NoIvGenerator"
 
