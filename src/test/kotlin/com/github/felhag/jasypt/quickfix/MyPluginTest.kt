@@ -1,4 +1,4 @@
-package com.github.felhag.intellijjasyptspringbootquickfix
+package com.github.felhag.jasypt.quickfix
 
 import com.intellij.ide.highlighter.XmlFileType
 import com.intellij.openapi.components.service
