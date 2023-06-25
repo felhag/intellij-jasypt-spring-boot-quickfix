@@ -5,7 +5,7 @@ import org.jasypt.encryption.StringEncryptor
 
 class DecryptAction : AbstractJasyptAction("Decrypt") {
     override fun isValidProperty(element: PsiElement): Boolean {
-        return element.text.startsWith(PREFIX);
+        return element.text.startsWith(PREFIX)
     }
 
     override fun execute(encryptor: StringEncryptor, text: String): String {

@@ -6,9 +6,6 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>org.jetbrains.plugins.yaml</depends>
-    <depends>com.intellij.modules.java</depends>
-
-    <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.github.felhag.jasypt.quickfix.settings.Settings"/>
@@ -16,11 +13,11 @@
                                  id="jasypt.quickfix.settings.SettingsConfigurer"
                                  displayName="Jasypt Spring Boot Quickfix"/>
         <intentionAction>
-            <language>YAML</language>
+            <language>yaml</language>
             <className>com.github.felhag.jasypt.quickfix.action.DecryptAction</className>
         </intentionAction>
         <intentionAction>
-            <language>YAML</language>
+            <language>yaml</language>
             <className>com.github.felhag.jasypt.quickfix.action.EncryptAction</className>
         </intentionAction>
     </extensions>

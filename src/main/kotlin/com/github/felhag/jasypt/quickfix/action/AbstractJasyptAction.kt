@@ -40,6 +40,7 @@ abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAct
         val element = this.findElement(file, editor) ?: return
 
         // Force to use intellijs classloader
+        val classLoader = Thread.currentThread().contextClassLoader
         Thread.currentThread().contextClassLoader = this.javaClass.classLoader
 
         val properties = buildProperties(file)
@@ -54,6 +55,9 @@ abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAct
         val document = editor!!.document
         document.deleteString(element.startOffset, element.endOffset)
         document.insertString(element.startOffset, decrypt)
+
+        // Reset classloader
+        Thread.currentThread().contextClassLoader = classLoader
     }
 
     private fun buildProperties(file: PsiFile?): JasyptEncryptorConfigurationProperties {
@@ -80,6 +84,10 @@ abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAct
             return null
         }
         val offset: Int = editor.caretModel.offset
-        return file.findElementAt(offset)
+        val element = file.findElementAt(offset)
+        if ("\n" == element?.text) {
+            return element.prevSibling.lastChild.lastChild
+        }
+        return element
     }
 }
