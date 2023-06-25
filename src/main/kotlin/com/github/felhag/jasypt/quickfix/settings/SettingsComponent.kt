@@ -1,35 +1,34 @@
 package com.github.felhag.jasypt.quickfix.settings
 
-import com.intellij.credentialStore.CredentialAttributes
-import com.intellij.ide.passwordSafe.PasswordSafe
+import com.github.felhag.jasypt.quickfix.Environment
 import com.intellij.ui.components.JBPasswordField
 import com.intellij.util.ui.FormBuilder
+import java.util.stream.Collector
+import java.util.stream.Collectors
 import javax.swing.JPanel
 
 
 class SettingsComponent {
     var panel: JPanel? = null
 
-    private val password = JBPasswordField()
+    private val passwords = Environment.values().associateBy({ it }, { JBPasswordField() })
 
     init {
-        panel = FormBuilder.createFormBuilder()
-            .addLabeledComponent("Jasypt password", password)
-            .addComponentFillVertically(JPanel(), 0)
-            .panel
+        val builder = FormBuilder.createFormBuilder()
+        passwords.forEach { builder.addLabeledComponent(it.key.name, it.value) }
+        panel = builder.addComponentFillVertically(JPanel(), 0).panel
     }
 
     fun isModified(): Boolean {
-        val current = Settings.get().get()
-        val equal = String(password.password).equals(current);
-        return !equal
+        val settings = Settings.get()
+        return !settings.getAll().all { passwords[it.key]!!.password.equals(it.value) }
     }
 
     fun apply() {
-        Settings.get().set(String(password.password));
+        passwords.forEach { Settings.get().set(it.key, String(it.value.password)) }
     }
 
     fun reset() {
-        password.text = Settings.get().get()
+        passwords.forEach { it.value.text = Settings.get().get(it.key) }
     }
 }

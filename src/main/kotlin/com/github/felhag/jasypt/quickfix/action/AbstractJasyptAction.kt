@@ -1,5 +1,6 @@
 package com.github.felhag.jasypt.quickfix.action
 
+import com.github.felhag.jasypt.quickfix.Environment
 import com.github.felhag.jasypt.quickfix.settings.Settings
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
 import com.intellij.openapi.editor.Editor
@@ -29,16 +30,16 @@ abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAct
             return
         }
 
-        val element = this.findElement(file, editor)
-        if (element == null) {
-            return
-        }
+        val element = this.findElement(file, editor) ?: return
 
         // Force to use intellijs classloader
         Thread.currentThread().contextClassLoader = this.javaClass.classLoader
 
         val properties = JasyptEncryptorConfigurationProperties()
-        properties.password = Settings.get().get()
+        val fileName = file.virtualFile.name
+        val envLetter = fileName.substring("application-".length, "application-".length + 1)
+        val env = Environment.valueOf(envLetter.uppercase())
+        properties.password = Settings.get().get(env)
         properties.algorithm = "PBEWithMD5AndDES"
         properties.ivGeneratorClassname = "org.jasypt.iv.NoIvGenerator"
 
