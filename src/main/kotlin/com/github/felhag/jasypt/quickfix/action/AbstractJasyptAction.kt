@@ -11,9 +11,15 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.refactoring.suggested.endOffset
 import com.intellij.refactoring.suggested.startOffset
+import com.intellij.util.containers.stream
 import com.ulisesbocchio.jasyptspringboot.configuration.StringEncryptorBuilder
 import com.ulisesbocchio.jasyptspringboot.properties.JasyptEncryptorConfigurationProperties
+import org.apache.commons.lang.StringUtils
 import org.jasypt.encryption.StringEncryptor
+import org.springframework.boot.env.YamlPropertySourceLoader
+import org.springframework.core.env.StandardEnvironment
+import org.springframework.core.io.FileSystemResource
+import java.io.File
 
 const val PREFIX = "ENC("
 const val SUFFIX = ")"
@@ -43,7 +49,7 @@ abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAct
         val classLoader = Thread.currentThread().contextClassLoader
         Thread.currentThread().contextClassLoader = this.javaClass.classLoader
 
-        val properties = buildProperties(file)
+        val properties = buildProperties(file!!)
         val builder = StringEncryptorBuilder(properties, "jasypt.encryptor").build()
         val decrypt = try {
             execute(builder, element.text)
@@ -60,17 +66,32 @@ abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAct
         Thread.currentThread().contextClassLoader = classLoader
     }
 
-    private fun buildProperties(file: PsiFile?): JasyptEncryptorConfigurationProperties {
-        val properties = JasyptEncryptorConfigurationProperties()
+    private fun buildProperties(file: PsiFile): JasyptEncryptorConfigurationProperties {
+        val virtualFile = file.virtualFile
+        val path = StringUtils.removeEnd(virtualFile.path, virtualFile.name)
+        val properties = mergeProperties(path, "application.yml", "application.yaml", virtualFile.name)
         val env = getEnvironment(file)!!
         properties.password = Settings.get().get(env)
-        properties.algorithm = "PBEWithMD5AndDES"
-        properties.ivGeneratorClassname = "org.jasypt.iv.NoIvGenerator"
         return properties
     }
 
+    private fun mergeProperties(path: String, vararg files: String): JasyptEncryptorConfigurationProperties {
+        val env = StandardEnvironment()
+        files.stream()
+            .map { "$path$it" }
+            .map(::File)
+            .filter(File::exists)
+            .map(::FileSystemResource)
+            .flatMap { YamlPropertySourceLoader().load("application-${env.propertySources.size()}", it).stream() }
+            .forEach { env.propertySources.addLast(it) }
+        return JasyptEncryptorConfigurationProperties.bindConfigProps(env)
+    }
+
     private fun getEnvironment(file: PsiFile?): Environment? {
-        val fileName = file!!.virtualFile.name
+        if (file == null) {
+            return null
+        }
+        val fileName = file.virtualFile.name
         val envLetter = fileName.substring("application-".length, "application-".length + 1)
         return Environment.values().find { it.name == envLetter.uppercase() }
     }
