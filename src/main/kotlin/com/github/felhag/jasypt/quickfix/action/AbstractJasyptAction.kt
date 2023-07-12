@@ -88,7 +88,7 @@ abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAct
     }
 
     private fun getEnvironment(file: PsiFile?): Environment? {
-        if (file == null) {
+        if (file == null || file.virtualFile == null) {
             return null
         }
         val fileName = file.virtualFile.name
