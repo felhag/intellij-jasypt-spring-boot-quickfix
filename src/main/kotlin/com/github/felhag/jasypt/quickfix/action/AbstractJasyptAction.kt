@@ -23,6 +23,7 @@ import java.io.File
 
 const val PREFIX = "ENC("
 const val SUFFIX = ")"
+const val FILE_PREFIX = "application-"
 
 abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAction() {
 
@@ -92,7 +93,11 @@ abstract class AbstractJasyptAction(private val name: String) : BaseIntentionAct
             return null
         }
         val fileName = file.virtualFile.name
-        val envLetter = fileName.substring("application-".length, "application-".length + 1)
+        if (!fileName.startsWith(FILE_PREFIX)) {
+            return null
+        }
+
+        val envLetter = fileName.substring(FILE_PREFIX.length, FILE_PREFIX.length + 1)
         return Environment.values().find { it.name == envLetter.uppercase() }
     }
 
